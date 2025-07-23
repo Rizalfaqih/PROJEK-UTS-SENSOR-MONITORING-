@@ -7,50 +7,56 @@
 SoftwareSerial mySerial(3, 4); // RX, TX
 LoRa_E220 e220ttl(&mySerial, 2, 6, 5); // AUX, M0, M1
 
+// Definisi struct sesuai dengan transmitter
 struct weatherData {
   int humidity;
   float temperature;
   bool rain;
 };
 
-weatherData currentWeather = {50, 25.0, false};
-
 void setup() {
   Serial.begin(9600);
   delay(500);
+
   e220ttl.begin();
   delay(500);
 
-  Serial.println("Transmitter Siap...");
+  Serial.println("Receiver Siap...");
 }
 
 void loop() {
-  static unsigned long lastSend = millis();
-  if (millis() - lastSend > 5000) {
-    // Update data
-    currentWeather.humidity = 30;
-    currentWeather.temperature = 23.7;
-    currentWeather.rain = false;
+  if (e220ttl.available() > 0) {
+    // Coba terima struct terlebih dahulu
+    ResponseStructContainer rsc = e220ttl.receiveMessage(sizeof(weatherData));
 
-    // 1. Kirim struct
-    ResponseStatus rs1 = e220ttl.sendMessage(&currentWeather, sizeof(currentWeather));
-    Serial.print("Struct terkirim, status: ");
-    Serial.println(rs1.getResponseDescription());
+    if (rsc.status.code == 1) {
+      // Data struct diterima
+      weatherData receivedWeather;
+      memcpy(&receivedWeather, rsc.data, sizeof(receivedWeather));
 
-    delay(100); // jeda singkat agar paket tidak tabrakan
+      Serial.println("Data struct diterima:");
+      Serial.print("Humidity: ");
+      Serial.print(receivedWeather.humidity);
+      Serial.println("%");
 
-    // 2. Kirim String versi readable
-    String text = "Humidity: " + String(currentWeather.humidity) +
-                  "%, Temp: " + String(currentWeather.temperature, 1) +
-                  "°C, Rain: " + (currentWeather.rain ? "Yes" : "No");
+      Serial.print("Temperature: ");
+      Serial.print(receivedWeather.temperature);
+      Serial.println(" °C");
 
-    ResponseStatus rs2 = e220ttl.sendMessage(text);
-    Serial.print("String terkirim: ");
-    Serial.println(text);
-    Serial.print("Status: ");
-    Serial.println(rs2.getResponseDescription());
+      Serial.print("Rain: ");
+      Serial.println(receivedWeather.rain ? "Yes" : "No");
 
-    lastSend = millis();
+    } else {
+      // Jika bukan struct, coba sebagai String
+      ResponseContainer rc = e220ttl.receiveMessage();
+      if (rc.status.code == 1) {
+        Serial.println("Data string diterima:");
+        Serial.println(rc.data);
+      } else {
+        Serial.print("Gagal menerima data, status: ");
+        Serial.println(rc.status.getResponseDescription());
+      }
+    }
   }
 }
 
