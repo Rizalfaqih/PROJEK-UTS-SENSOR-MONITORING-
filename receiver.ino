@@ -11,6 +11,7 @@ void printParameters(struct Configuration configuration);
 void printModuleInformation(struct ModuleInformation moduleInformation);
 
 struct weatherData {
+    char id_unit;
   int humidity;
   float temperature;
   bool rain;
@@ -55,27 +56,46 @@ void setup() {
   printParameters(configuration);
   c.close();
 
-  Serial.println("Hi, waiting for weather data...");
+  Serial.println("Hi, waiting for Data...");
 }
 
 void loop() {
-  if (e220ttl.available() > 1) {
-    // read the String message
-    ResponseStructContainer rsc = e220ttl.receiveMessage(sizeof(weatherData));
-    weatherData currentWeather = *(weatherData*) rsc.data;
-    Serial.print("Humidity     [%]: ");
-    Serial.println(currentWeather.humidity);
-    Serial.print("Temperature [°C]: ");
-    Serial.println(currentWeather.temperature);
-    Serial.print("Rain            : ");
-    if (currentWeather.rain) {
-      Serial.println("yes");
+  // If something available
+  if (e220ttl.available()>1) {
+      // read the String message
+    ResponseContainer rc = e220ttl.receiveMessage();
+    // Is something goes wrong print error
+    if (rc.status.code!=1){
+        Serial.println(rc.status.getResponseDescription());
+    }else{
+        // Print the data received
+        Serial.println(rc.data);
     }
-    else {
-      Serial.println("no");
-    }
-    Serial.println();
   }
+
+
+  
+//  if (e220ttl.available() > 1) {
+
+    
+
+//    ResponseStructContainer rsc = e220ttl.receiveMessage(sizeof(weatherData));
+//    weatherData currentWeather = *(weatherData*) rsc.data;
+//     Serial.print("Id     [%]: ");
+//    Serial.println(currentWeather.id_unit);
+//    Serial.print("Humidity     [%]: ");
+//    Serial.println(currentWeather.humidity);
+//    Serial.print("Temperature [°C]: ");
+//    Serial.println(currentWeather.temperature);
+//    Serial.print("Rain            : ");
+//    if (currentWeather.rain) {
+//      Serial.println("yes");
+//    }
+//    else {
+//      Serial.println("no");
+//    }
+//    Serial.println();
+//  }
 }
 
 void printParameters(struct Configuration configuration) {
