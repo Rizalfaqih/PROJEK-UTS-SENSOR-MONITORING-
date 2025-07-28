@@ -6,17 +6,10 @@
 
 SoftwareSerial mySerial(3, 4); // Arduino RX <-- e220 TX, Arduino TX --> e220 RX
 LoRa_E220 e220ttl(&mySerial, 2, 6, 5); // AUX M0 M1
-
 void printParameters(struct Configuration configuration);
 void printModuleInformation(struct ModuleInformation moduleInformation);
 
-struct weatherData {
-  int humidity;
-  float temperature;
-  bool rain;
-};
-
-weatherData currentWeather = {50, 20.0, false};
+String DataSD;  //Data Dummy
 
 void setup() {
   Serial.begin(9600);
@@ -56,20 +49,8 @@ void setup() {
   Serial.println(c.status.code);
   printParameters(configuration);
   c.close();
-  Serial.println("Hi, I'm going to send message!");
+  Serial.println("Going to send message!");
 }
-
-void loop() {
-  static unsigned long lastSend = millis();
-  if (millis() - lastSend > 5000) {
-    currentWeather.humidity = 30;
-    currentWeather.temperature = 23.7;
-    currentWeather.rain = false;
-    e220ttl.sendMessage(&currentWeather, sizeof(currentWeather));
-    lastSend = millis();
-  }
-}
-
 void printParameters(struct Configuration configuration) {
   DEBUG_PRINTLN("----------------------------------------");
   DEBUG_PRINT(F("HEAD : "));  DEBUG_PRINT(configuration.COMMAND, HEX); DEBUG_PRINT(" "); DEBUG_PRINT(configuration.STARTING_ADDRESS, HEX); DEBUG_PRINT(" "); DEBUG_PRINTLN(configuration.LENGHT, HEX);
@@ -92,4 +73,12 @@ void printParameters(struct Configuration configuration) {
   DEBUG_PRINT(F("TransModeEnableRSSI: "));  DEBUG_PRINT(configuration.TRANSMISSION_MODE.enableRSSI, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getRSSIEnableByteDescription());
   DEBUG_PRINT(F("TransModeFixedTrans: "));  DEBUG_PRINT(configuration.TRANSMISSION_MODE.fixedTransmission, BIN); DEBUG_PRINT(" -> "); DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getFixedTransmissionDescription());
   DEBUG_PRINTLN("----------------------------------------");
+}
+
+void loop() {
+  DataSD =  String("GD001") + "," + String("01042025") + "," + String("07:30") + "," + String("111111.1") + "," + String("75") + "," + String("124") + "," + String("3") + "," + String("2000") + "," + String("200") + "," + String("8.5") + "," + String("33") + "," + String("28") + "," + String("-6.1234") + "," + String("104.1234") +"," + String("Off")+("\n");
+  Serial.println(DataSD);  // Final Data
+  e220ttl.sendMessage(DataSD);
+  delay(5000);
+
 }
